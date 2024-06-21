@@ -35,11 +35,53 @@ export const createJobPost = async (req, res) => {
 // fetch all jobPost ...
 export const getJobPosts = async (req, res) => {
   try {
-    const jobPosts = await JobPost.find({ posted: true });
-    if (jobPosts) {
-      res.json(jobPosts);
-    } else {
-      return res.status(400).json({ error: "there is no any jobposting !" });
+    // finding the role of user ...
+    const userRole = req.user.role;
+
+    // for candidate role ...
+    if (userRole === "Candidate") {
+      const jobPosts = await JobPost.find({ posted: true }).select(
+        "-coordinatorId -recruiterIds -posted"
+      );
+      if (jobPosts) {
+        return res.json(jobPosts);
+      } else {
+        return res.status(400).json({ error: "there is no any jobposting !" });
+      }
+    }
+
+    // for Recruiter role ...
+    if (userRole === "Recruiter") {
+      const jobPosts = await JobPost.find({ posted: true }).select(
+        "-coordinatorId"
+      );
+      if (jobPosts) {
+        return res.json(jobPosts);
+      } else {
+        return res.status(400).json({ error: "there is no any jobposting !" });
+      }
+    }
+
+    // for Coordinator role ...
+    if (userRole === "Coordinator") {
+      const jobPosts = await JobPost.find({ posted: true });
+      if (jobPosts) {
+        return res.json(jobPosts);
+      } else {
+        return res.status(400).json({ error: "there is no any jobposting !" });
+      }
+    }
+
+    // for employee role ...
+    if (userRole === "Employer") {
+      const jobPosts = await JobPost.find({ posted: true }).select(
+        "-coordinatorId -recruiterIds -posted"
+      );
+      if (jobPosts) {
+        return res.json(jobPosts);
+      } else {
+        return res.status(400).json({ error: "there is no any jobposting !" });
+      }
     }
   } catch (error) {
     return res.status(500).json({ error: error.message });
@@ -49,6 +91,11 @@ export const getJobPosts = async (req, res) => {
 // approve jobpost ...
 export const approveJobPost = async (req, res) => {
   try {
+
+    // check if the user is a coordinator or not ...
+    if(req.user.role !== 'Coordinator'){
+      return res.status(403).json({ error: "Access denied. Only coordinators can approve job posts." });
+    }
     const jobPost = await JobPost.findById(req.params.id);
     if (jobPost) {
       jobPost.posted = true;
@@ -65,6 +112,11 @@ export const approveJobPost = async (req, res) => {
 // assignRecruiter ...
 export const assignRecruiters = async (req, res) => {
   try {
+    // check if the user is a coordinator or not ...
+    if(req.user.role !== 'Coordinator'){
+      return res.status(403).json({ error: "Access denied. Only coordinators can approve job posts." });
+    }
+    
     const jobPost = await JobPost.findById(req.params.id);
     if (jobPost) {
       jobPost.recruiterIds = req.body.recruiterIds;

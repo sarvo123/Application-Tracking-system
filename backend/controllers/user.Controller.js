@@ -33,7 +33,7 @@ export const signupUser = async (req , res) =>{
 
         if(newUser){
             // Generate JWT token here ...
-            generateTokenAndSetCookie(newUser._id , res );
+            generateTokenAndSetCookie(newUser.role , newUser._id , res );
             // save the user to database ...
             await newUser.save();
 
@@ -59,13 +59,17 @@ export const loginUser = async (req , res)=>{
     try{
         const {name ,email ,  password} = req.body ;
         const user = await User.findOne({email});
+        if(!user){
+            return res.status(400).json({error : "User already exist with same emailId . "});
+
+        }
         const isPasswordCorrect = await bcryptjs.compare(password , user?.password || "");
 
-        if(!user || !isPasswordCorrect){
-            return res.status(400).json({error : "Invalid emailid or Password "});
+        if(!isPasswordCorrect){
+            return res.status(400).json({error : "Invalid  Password "});
         }
 
-        generateTokenAndSetCookie(user._id , res);
+        generateTokenAndSetCookie(user.role, user._id , res);
 
         res.status(200).json({
             _id : user._id,
